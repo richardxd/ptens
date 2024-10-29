@@ -42,6 +42,8 @@ class subgraphlayer(torch.Tensor):
         assert self.size()==y.size()
         assert self.G==y.G
         assert self.S==y.S
+        print("self.atoms:", self.atoms)
+        print("y.atoms:", y.atoms)
         assert self.atoms==y.atoms
         R=torch.Tensor.__add__(self,y)
         R.atoms=self.atoms

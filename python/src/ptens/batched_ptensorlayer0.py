@@ -96,7 +96,7 @@ class batched_ptensorlayer0(p.batched_ptensorlayer):
     @classmethod
     def gather(self,atoms,x,*args):
         assert isinstance(atoms,pb.batched_atomspack)
-        assert isinstance(x,p.batched_ptensorlayer)
+        assert isinstance(x,p.batched_ptensorlayer), f"x is an instance of {type(x)}" 
         if len(args)==0:
             map=pb.batched_layer_map.overlaps_map(atoms,x.atoms)
         else:
