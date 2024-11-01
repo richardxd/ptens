@@ -17,7 +17,7 @@ import ptens_base as pb
 
 class batched_ptensorlayer(torch.Tensor):
 
-    covariant_functions=[torch.Tensor.to,torch.Tensor.add,torch.Tensor.sub,torch.relu]
+    covariant_functions=[torch.Tensor.to,torch.Tensor.add,torch.Tensor.sub,torch.relu, torch.Tensor.mul, torch.nn.functional.linear, torch.nn.functional.batch_norm]
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
@@ -25,7 +25,12 @@ class batched_ptensorlayer(torch.Tensor):
             kwargs = {}
         if func in batched_ptensorlayer.covariant_functions:
             r= super().__torch_function__(func, types, args, kwargs)
-            r.atoms=args[0].atoms
+            for arg in args:
+                if isinstance(arg, batched_ptensorlayer):
+                    r.atoms=arg.atoms
+                    r.G = arg.G
+                    r.S = arg.S
+                    break
         else:
             r= super().__torch_function__(func, types, args, kwargs)
             if isinstance(r,torch.Tensor):

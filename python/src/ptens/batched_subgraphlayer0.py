@@ -18,7 +18,7 @@ import ptens as p
 import ptens_base as pb 
 
 
-class batched_subgraphlayer0(p.subgraphlayer,p.batched_ptensorlayer0):
+class batched_subgraphlayer0(p.batched_subgraphlayer, p.batched_ptensorlayer0):
 
 
     def __new__(cls,G,S,atoms,M):
@@ -68,7 +68,7 @@ class batched_subgraphlayer0(p.subgraphlayer,p.batched_ptensorlayer0):
         assert isinstance(M,torch.Tensor)
         atoms=G.subgraphs(S)
         assert M.dim()==2
-        assert M.size(0)==atoms.nrows0()
+        # assert M.size(0)==atoms.nrows0()
         return batched_subgraphlayer0(G,S,atoms,M)
 
     

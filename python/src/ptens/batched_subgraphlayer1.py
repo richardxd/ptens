@@ -18,7 +18,7 @@ import ptens as p
 import ptens_base as pb 
 
 
-class batched_subgraphlayer1(p.subgraphlayer,p.batched_ptensorlayer1):
+class batched_subgraphlayer1(p.batched_subgraphlayer, p.batched_ptensorlayer1):
 
 
     def __new__(cls,G,S,atoms,M):
@@ -44,7 +44,7 @@ class batched_subgraphlayer1(p.subgraphlayer,p.batched_ptensorlayer1):
         return batched_subgraphlayer1(G,S,atoms,M)
 
     @classmethod
-    def from_ptensorlayers(self,list):
+    def from_ptensorlayers(self,G, S, list):
         for a in list:
             assert isinstance(a,p.ptensorlayer1)
         atoms=pb.batched_atomspack([a.atoms for a in list])
