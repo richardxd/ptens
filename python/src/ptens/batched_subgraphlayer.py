@@ -24,7 +24,7 @@ class batched_subgraphlayer(torch.Tensor):
         if kwargs is None:
             kwargs = {}
         if func in batched_subgraphlayer.covariant_functions:
-            print("func in covariant functions:", func)
+            # print("func in covariant functions:", func)
             r= super().__torch_function__(func, types, args, kwargs)
             # find the first argument of type batched_subgraphlayer
             for arg in args:
@@ -34,11 +34,11 @@ class batched_subgraphlayer(torch.Tensor):
                     r.S = arg.S
                     break
         else:
-            print("func not in covariant functions:", func)
+            # print("func not in covariant functions:", func)
             r= super().__torch_function__(func, types, args, kwargs)
             if isinstance(r,torch.Tensor):
                 r=torch.Tensor(r)
-        print("r is", r.__repr__())
+        # print("r is", r.__repr__())
         return r
 
 
