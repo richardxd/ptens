@@ -49,6 +49,7 @@ namespace ptens{
     using cnine::diff_class<Ptensors0<TYPE> >::grad;
     using TENSOR::get_dev;
     using TENSOR::dim;
+    using TENSOR::stride;
     using TENSOR::dev;
     using TENSOR::move_to_device;
     using TENSOR::add;
@@ -100,16 +101,16 @@ namespace ptens{
       tag(_atoms){}
 
 
-    /*
     static Ptensors0 cat(const vector<Ptensors0>& list){
       vector<AtomsPack> v;
       for(auto& p:list)
 	v.push_back(p.atoms);
-      if(ptens_global::cache_atomspack_cats) 
-	return Ptensors0(TENSOR::stack(0,list),ptens_global::atomspack_cat_cache(v));
-      return Ptensors0(TENSOR::stack(0,list),AtomsPack::cat(v));
+      return Ptensors0(AtomsPack::cat(v),TENSOR::stack(0,list));
+      //if(ptens_global::cache_atomspack_cats) 
+      //return Ptensors0(ptens_global::atomspack_cat_cache(v),TENSOR::stack(0,list));
+      //return Ptensors0(AtomsPack::cat(v),TENSOR::stack(0,list));
     }
-    */
+
 
   public: // ---- Named parameter constructors ---------------------------------------------------------------
 
@@ -251,11 +252,12 @@ namespace ptens{
     void zip0(const AindexPackB& map, const TENSOR& M, 
       const std::function<void(const Rtensor1_view&, const Rtensor1_view&, int)>& lambda, const int offset=0, int n=0) const{
       int N=map.size();
-      int nc=get_nc();
+      //int nc=get_nc();
+      int s0=stride(0);
       if(n==0) n=nc-offset; 
       for(int i=0; i<N; i++)
 	lambda(M.row(map.toffset(i)).view1(),
-	  Rtensor1_view(const_cast<float*>(get_arr())+map.soffset(i)*nc+offset,n,1,get_dev()),map.nix(i));
+	  Rtensor1_view(const_cast<float*>(get_arr())+map.soffset(i)*s0+offset,n,1,get_dev()),map.nix(i));
     }
 
 
@@ -330,8 +332,9 @@ namespace ptens{
     template<typename OUTPUT>
     void add_gather_back(const OUTPUT& x, const LayerMap& map){
       auto plan=GatherPlanFactory::gather_map0(map,x.atoms,atoms,x.getk(),0);
-      if constexpr(std::is_same<OUTPUT,Ptensors0<TYPE> >::value)
+      if constexpr(std::is_same<OUTPUT,Ptensors0<TYPE> >::value){
 	broadcast0(x.reduce0(plan.out()),plan.in(),0);
+      }
       if constexpr(std::is_same<OUTPUT,Ptensors1<TYPE> >::value)
 	broadcast0(x.reduce0(plan.out()),plan.in(),0);
       if constexpr(std::is_same<OUTPUT,Ptensors2<TYPE> >::value)

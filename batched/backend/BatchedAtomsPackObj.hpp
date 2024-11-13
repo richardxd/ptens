@@ -15,6 +15,7 @@
 #ifndef _ptens_BatchedAtomsPackObj
 #define _ptens_BatchedAtomsPackObj
 
+#include "observable.hpp"
 #include "shared_object_pack.hpp"
 #include "AtomsPackObj.hpp"
 
@@ -22,7 +23,8 @@
 namespace ptens{
 
 
-  class BatchedAtomsPackObj: public cnine::shared_object_pack<AtomsPackObj>{
+  class BatchedAtomsPackObj:  public cnine::observable<BatchedAtomsPackObj>,
+			      public cnine::shared_object_pack<AtomsPackObj>{
   public:
 
     typedef cnine::shared_object_pack<AtomsPackObj> BASE;
@@ -39,14 +41,53 @@ namespace ptens{
   public: // ---- Constructors -------------------------------------------------------------------------------
 
 
-    BatchedAtomsPackObj(const vector<vector<vector<int> > >& v){
+    BatchedAtomsPackObj():
+      observable(this){}
+
+    BatchedAtomsPackObj(const vector<vector<vector<int> > >& v):
+      BatchedAtomsPackObj(){
       for(auto& p:v)
 	push_back(to_share(new AtomsPackObj(p)));
     }
 
-    BatchedAtomsPackObj(const initializer_list<initializer_list<initializer_list<int> > >& v){
+    BatchedAtomsPackObj(const initializer_list<initializer_list<initializer_list<int> > >& v):
+      BatchedAtomsPackObj(){
       for(auto& p:v)
 	push_back(to_share(new AtomsPackObj(p)));
+    }
+
+    BatchedAtomsPackObj(const BatchedAtomsPackObj&& x):
+      observable(this),
+      BASE(x){}
+
+
+  public: // ---- Concatenation -------------------------------------------------------------------------------
+
+
+    static BatchedAtomsPackObj cat(const vector<shared_ptr<BatchedAtomsPackObj> > list){
+      BatchedAtomsPackObj R;
+      if(list.size()==0) return R;
+      int N=list[0]->size();
+      for(int i=0; i<N; i++){
+	vector<shared_ptr<AtomsPackObj> > v;
+	for(auto& p:list)
+	  v.push_back((*p)(i));
+	R.push_back(make_shared<AtomsPackObj>(AtomsPackObj::cat(v)));
+      }
+      return R;
+    }
+
+   static BatchedAtomsPackObj cat(const vector<BatchedAtomsPackObj*> list){
+      BatchedAtomsPackObj R;
+      if(list.size()==0) return R;
+      int N=list[0]->size();
+      for(int i=0; i<N; i++){
+	vector<shared_ptr<AtomsPackObj> > v;
+	for(auto& p:list)
+	  v.push_back((*p)(i));
+	R.push_back(make_shared<AtomsPackObj>(AtomsPackObj::cat(v)));
+      }
+      return R;
     }
 
 

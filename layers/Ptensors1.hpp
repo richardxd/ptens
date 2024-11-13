@@ -58,6 +58,7 @@ namespace ptens{
 
     using BASE::get_dev;
     using TENSOR::dim;
+    using TENSOR::stride;
     using TENSOR::move_to_device;
     using TENSOR::add;
     using TENSOR::dev;
@@ -116,9 +117,9 @@ namespace ptens{
       vector<AtomsPack> v;
       for(auto& p:list)
 	v.push_back(p.atoms);
-      if(ptens_global::cache_atomspack_cats) 
-	return Ptensors1(TENSOR::stack(0,list),ptens_global::atomspack_cat_cache(v));
-      return Ptensors1(TENSOR::stack(0,list),AtomsPack::cat(v));
+      //if(ptens_global::cache_atomspack_cats) 
+      //return Ptensors1(ptens_global::atomspack_cat_cache(v),TENSOR::stack(0,list));
+      return Ptensors1(AtomsPack::cat(v),TENSOR::stack(0,list));
     }
 
 
@@ -316,9 +317,10 @@ namespace ptens{
       int N=map.size();
       int nc=get_nc();
       if(n==0) n=nc-offset; 
+      int s0=stride(0);
       for(int i=0; i<N; i++)
 	lambda(M.row(map.toffset(i)).view1(),
-	  Ptensor1view<TYPE>(const_cast<float*>(get_arr())+map.soffset(i)*nc+offset,
+	  Ptensor1view<TYPE>(const_cast<float*>(get_arr())+map.soffset(i)*s0+offset,
 	    n,nc,1,map.ix(i),get_dev()),map.nix(i));
     }
 

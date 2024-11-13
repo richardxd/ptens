@@ -38,22 +38,34 @@ namespace ptens{
     BatchedAtomsPackBase(BatchedAtomsPackObj* _obj):
       obj(_obj){}
 
-    BatchedAtomsPackBase(BatchedAtomsPackObj&& _obj):
-      obj(new BatchedAtomsPackObj(_obj)){}
+    //BatchedAtomsPackBase(BatchedAtomsPackObj&& _obj):
+    //obj(new BatchedAtomsPackObj(_obj)){}
 
     BatchedAtomsPackBase(shared_ptr<BatchedAtomsPackObj> _obj):
       obj(_obj){}
 
     BatchedAtomsPackBase(const vector<AtomsPack>& x):
-      BatchedAtomsPackBase(new BatchedAtomsPackObj(cnine::mapcar<AtomsPack,shared_ptr<AtomsPackObj> >
-	  (x,[](const AtomsPack& y){return y.obj;}))){}
+      obj(new BatchedAtomsPackObj()){
+      for(auto& p:x)
+	obj->push_back(p.obj);
+    }
+
+    //BatchedAtomsPackBase(const vector<AtomsPack>& x):
+    //obj(new BatchedAtomsPackObj()){
+    //for(auto& p:x)
+    //obj->push_back(p.obj);
+    //}
+
+
+    //BatchedAtomsPackBase(const vector<AtomsPack>& x):
+    //BatchedAtomsPackBase(new BatchedAtomsPackObj(cnine::mapcar<AtomsPack,shared_ptr<AtomsPackObj> >
+    //	  (x,[](const AtomsPack& y){return y.obj;}))){}
 
     BatchedAtomsPackBase(const vector<vector<vector<int> > >& x):
       obj(new BatchedAtomsPackObj(x)){}
 
     BatchedAtomsPackBase(const initializer_list<initializer_list<initializer_list<int> > >& x):
       obj(new BatchedAtomsPackObj(x)){}
-
 
 
   public: // ----- Access ------------------------------------------------------------------------------------
@@ -106,6 +118,14 @@ namespace ptens{
     //}
 
 
+    static BatchedAtomsPackBase cat(const vector<BatchedAtomsPackBase>& x){
+      vector<BatchedAtomsPackObj*> v;
+      for(auto& p:x)
+	v.push_back(p.obj.get());
+      return ptens_global::batched_atomspack_cat_cache(v);
+    }
+
+    /*
     static BatchedAtomsPackBase cat(const vector<BatchedAtomsPackBase >& v){
       PTENS_ASSRT(v.size()>0);
       int N=v[0].size();
@@ -118,6 +138,7 @@ namespace ptens{
       }
       return BatchedAtomsPackBase(R);
     }
+    */
 
 
   public: // ---- I/O ----------------------------------------------------------------------------------------
@@ -147,6 +168,13 @@ namespace ptens{
 
     BatchedAtomsPack(const BatchedAtomsPackBase& x):
       BASE(x){}
+
+    static BatchedAtomsPack cat(const vector<BatchedAtomsPackBase>& x){
+      vector<BatchedAtomsPackObj*> v;
+      for(auto& p:x)
+	v.push_back(p.obj.get());
+      return ptens_global::batched_atomspack_cat_cache(v);
+    }
 
   };
 

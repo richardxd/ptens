@@ -16,17 +16,15 @@ namespace ptens{
 }
 
 #include "AtomsPackCatCache.hpp"
+#include "BatchedAtomsPackCatCache.hpp"
+#include "LayerMapCache.hpp"
+#include "BatchedLayerMapCache.hpp"
 #include "GatherPlanCache.hpp"
+#include "BatchedGatherPlanCache.hpp"
 #include "CompressedGatherMatrixCache.hpp"
-
-#include "GgraphCache.hpp"
-#include "SubgraphCache.hpp"
-#include "CompressedSubgraphAtomsPackCache.hpp"
 
 
 namespace ptens{
-
-
   namespace ptens_global{
 
     bool row_level_operations=false; 
@@ -36,9 +34,27 @@ namespace ptens{
 
     bool cache_atomspack_cats=true;
     AtomsPackCatCache atomspack_cat_cache; 
+    BatchedAtomsPackCatCache batched_atomspack_cat_cache; 
+
+    LayerMapCache overlaps_maps_cache;
+    BatchedLayerMapCache batched_overlaps_maps_cache;
 
     GatherPlanCache gather_plan_cache;
+    BatchedGatherPlanCache batched_gather_plan_cache;
+
     CompressedGatherMatrixCache gather_matrix_cache;
+
+  }
+}
+
+
+#include "GgraphCache.hpp"
+#include "SubgraphCache.hpp"
+#include "CompressedSubgraphAtomsPackCache.hpp"
+
+
+namespace ptens{
+  namespace ptens_global{
 
     GgraphCache graph_cache;
     SubgraphCache subgraph_cache;
@@ -46,8 +62,6 @@ namespace ptens{
     CompressedSubgraphAtomsPackCache c_subgraphatoms_cache;
 
   }
-
-
 }
 
 

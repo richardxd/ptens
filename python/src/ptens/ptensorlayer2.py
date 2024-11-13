@@ -67,11 +67,15 @@ class ptensorlayer2(p.ptensorlayer):
         assert M.size(0)==atoms.nrows2()
         return self.make(atoms,M)
 
+    @classmethod
+    def cat(self,args):
+        return ptensorlayer2_catFn.apply(args)
+    
     def backend(self):
         return _ptensors2.view(self.atoms,self)
 
     def zeros_like(self):
-        return ptensorlayer0.zeros(self.atoms,self.get_nc(),device=self.device)
+        return ptensorlayer2.zeros(self.atoms,self.get_nc(),device=self.device)
     
 
     # ----- Access -------------------------------------------------------------------------------------------
@@ -223,6 +227,24 @@ class ptensorlayer2(p.ptensorlayer):
 # ---- Autograd functions --------------------------------------------------------------------------------------------
 
 
+class ptensorlayer2_catFn(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx,x):
+        ctx.atomsv=[p.atoms for p in x]
+        ctx.nrowsv=[p.size(0) for p in x]
+        return ptensorlayer2.make(pb.atomspack.cat(ctx.atomsv),torch.cat(x))
+
+    @staticmethod
+    def backward(ctx,g):
+        r=[]
+        offs=0
+        for p in zip(ctx.atomsv,ctx.nrowsv):
+            r.append(ptensorlayer2.make(p[0],g[offs:offs+p[1],:]))
+            offs=offs+p[1]
+        return tuple(r)
+
+
 class ptensorlayer2_linmapsFn(torch.autograd.Function):
 
     @staticmethod
@@ -242,18 +264,25 @@ class ptensorlayer2_linmapsFn(torch.autograd.Function):
 class ptensorlayer2_gatherFn(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx,atoms,x,map):
+    def forward(atoms,x,map):
         r=ptensorlayer2.zeros(atoms,x.get_nc()*([2,5,15][x.getk()]),device=x.device)
         r.backend().add_gather(x.backend(),map)
-        ctx.x=x
-        ctx.tmap=map
         return r
 
     @staticmethod
+    def setup_context(ctx, inputs, outputs):
+        atoms, x, map = inputs
+        ctx.save_for_backward(x)
+        ctx.atoms = atoms
+        ctx.map = map
+            
+    @staticmethod
     def backward(ctx,g):
-        r=ctx.x.zeros_like()
-        r.backend().add_gather_back(g.backend(),ctx.map)
-        return r
+        x, = ctx.saved_tensors
+        r = x.zeros_like()
+        g_view = pb.ptensors2.view(ctx.atoms, g)
+        r.backend().add_gather_back(g_view,ctx.map)
+        return None, r, None
 
 
 # ------------------------------------------------------------------------------------------------------------
