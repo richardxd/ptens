@@ -62,6 +62,14 @@ class batched_subgraphlayer0(p.batched_subgraphlayer, p.batched_ptensorlayer0):
         return batched_subgraphlayer0(G=G,S=sub_graph,atoms=atoms,M=M)
 
     @classmethod
+    def from_ptensorlayers(self,G, S, list):
+        for a in list:
+            assert isinstance(a,p.ptensorlayer0)
+        atoms=pb.batched_atomspack([a.atoms for a in list])
+        M=torch.cat(list,0)
+        return batched_subgraphlayer0(G,S,atoms,M)
+
+    @classmethod
     def from_matrix(self,G,S,M):
         assert isinstance(G,p.batched_ggraph)
         assert isinstance(S,p.subgraph)
