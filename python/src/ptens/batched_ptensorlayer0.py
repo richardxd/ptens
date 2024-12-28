@@ -111,7 +111,7 @@ class batched_ptensorlayer0(p.batched_ptensorlayer):
     @classmethod
     def gather(self,atoms,x,*args):
         assert isinstance(atoms,pb.batched_atomspack)
-        assert isinstance(x,p.batched_ptensorlayer), f"x is an instance of {type(x)}" 
+        assert isinstance(x,p.batched_ptensorlayer)
         if len(args)==0:
             map=pb.batched_layer_map.overlaps_map(atoms,x.atoms)
         else:
@@ -202,6 +202,3 @@ class batched_ptensorlayer0_gatherFn(torch.autograd.Function):
         g_view = pb.batched_ptensors0.view(ctx.atoms, g)
         r.backend().add_gather_back(g_view, ctx.map)
         return None, r, None
-
-
-

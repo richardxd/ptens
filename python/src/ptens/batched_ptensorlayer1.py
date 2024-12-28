@@ -165,13 +165,6 @@ class batched_ptensorlayer1_gatherFn(torch.autograd.Function):
         return r
 
     @staticmethod
-    def setup_context(ctx, inputs, outputs):
-        atoms, x, map = inputs
-        ctx.map = map
-        ctx.atoms = atoms
-        ctx.save_for_backward(x)
-
-    @staticmethod
     def backward(ctx,g):
         x, = ctx.saved_tensors
         r = x.zeros_like()

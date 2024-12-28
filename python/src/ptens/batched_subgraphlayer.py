@@ -17,7 +17,8 @@ import ptens_base as pb
 
 class batched_subgraphlayer(torch.Tensor):
 
-    covariant_functions=[torch.Tensor.to,torch.Tensor.add,torch.Tensor.sub,torch.relu, torch.Tensor.mul, torch.nn.functional.linear, torch.nn.functional.batch_norm]
+    covariant_functions=[torch.Tensor.to,torch.Tensor.add,torch.Tensor.sub,torch.relu, torch.relu_, torch.Tensor.mul, torch.matmul,
+                         torch.nn.functional.linear, torch.nn.functional.batch_norm, torch.nn.functional.relu]
 
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
