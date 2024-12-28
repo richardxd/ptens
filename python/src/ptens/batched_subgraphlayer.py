@@ -13,36 +13,47 @@
 #
 
 import torch
-import ptens_base as pb
-import torch.overrides 
+import ptens_base as pb 
 
 class batched_subgraphlayer(torch.Tensor):
 
     covariant_functions=[torch.Tensor.to,torch.Tensor.add,torch.Tensor.sub,torch.relu, torch.Tensor.mul, torch.nn.functional.linear, torch.nn.functional.batch_norm]
+
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
         if kwargs is None:
             kwargs = {}
-        if func in batched_subgraphlayer.covariant_functions:
-            # print("func in covariant functions:", func)
+        if func in cls.covariant_functions:
             r= super().__torch_function__(func, types, args, kwargs)
-            # find the first argument of type batched_subgraphlayer
+            r.atoms=args[0].atoms
             for arg in args:
                 if isinstance(arg, batched_subgraphlayer):
                     r.atoms=arg.atoms
                     r.G = arg.G
                     r.S = arg.S
                     break
+            # r.G=args[0].G
+            # r.S=args[0].S
         else:
-            # print("func not in covariant functions:", func)
             r= super().__torch_function__(func, types, args, kwargs)
             if isinstance(r,torch.Tensor):
                 r=torch.Tensor(r)
-        # print("r is", r.__repr__())
         return r
 
 
+    # ---- Operations ----------------------------------------------------------------------------------------
 
-def matmul(x,y):
-    return x.from_matrix(x.atoms,torch.matmul(x,y))
 
+    # ---- Operations ----------------------------------------------------------------------------------------
+
+
+    def __add__(self,y):
+        assert self.size()==y.size()
+        assert self.G==y.G
+        assert self.S==y.S
+        assert self.atoms==y.atoms
+        R=torch.Tensor.__add__(self,y)
+        R.atoms=self.atoms
+        R.G=self.G
+        R.S=self.S
+        return R

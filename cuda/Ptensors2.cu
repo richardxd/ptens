@@ -192,7 +192,7 @@ __global__ void Ptensors2_reduce2_shrink_kernel(float* rarr, int rs, const float
 
   for(int i=0; i<k; i++)
     for(int j=0; j<k; j++)
-      r[(i*k+j)*rs]+=x[(ix[i+4]*m+ix[j+4])*xs]+x[(ix[j+4]*m+ix[i+4])*xs];
+      r[(i*k+j)*rs]+=x[(ix[i+4]*m+ix[j+4])*xs]+x[(ix[j+4]*m+ix[i+4])*xs+n];
 }
 
 
@@ -367,6 +367,36 @@ __global__ void Ptensors2_broadcast2_kernel(float* rarr, const int rs,
 }
 
 
+__global__ void Ptensors2_broadcast2_shrink_kernel(float* rarr, const int rs, 
+  const float* xarr, const int xs, const int* maparr, const int maps, const int* bmap, const int n){
+  extern __shared__ unsigned char _shared[]; 
+  int* ix=reinterpret_cast<int*>(_shared);
+
+  const int b=blockIdx.x;
+  assert(b<bmap[0]);
+  const int c=threadIdx.x;
+  const int boffs=bmap[b+1];
+  const int N=bmap[b+2]-bmap[b+1]-1;
+
+  for(int s=0; s<N; s++){
+    const int row=bmap[boffs+s+1];
+    if(c<maps) ix[c]=maparr[row*maps+c];
+    __syncthreads();
+    if(c>=n) continue;
+    const int k=ix[1];
+    const int m=ix[3];
+
+    const float* x=xarr+ix[0]*xs+c;
+    float* r=rarr+ix[2]*rs+c;
+    for(int i=0; i<k; i++)
+      for(int j=0; j<k; j++){
+	float t=x[(i*k+j)*xs];
+	r[(ix[i+4]*m+ix[j+4])*rs]+=t;
+      }
+  }
+}
+
+
 // -----------------------------------------------------------------------------------------------------------
 
 
@@ -377,10 +407,13 @@ namespace ptens{
     int offs, int n, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
     if(map.dim(0)==0) return;
 
     PTENS_CHANNEL_LIMIT(n);
     const int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
+
     Ptensors2_reduce0_kernel<<<map.dim(0),nthrd,map.dim(1)*4,stream>>>
       (r.get_arr(),r.stride(0),x.get_arr()+offs,x.stride(0),map.on_device(dev).get_arr(),map.stride(0),n);
   }
@@ -389,10 +422,13 @@ namespace ptens{
     int offs, int n, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
     if(map.dim(0)==0) return;
 
     PTENS_CHANNEL_LIMIT(n);
     const int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
+
     Ptensors2_reduce0_shrink_kernel<<<map.dim(0),nthrd,map.dim(1)*4,stream>>>
       (r.get_arr(),r.stride(0),x.get_arr()+offs,x.stride(0),map.on_device(dev).get_arr(),map.stride(0),n);
   }
@@ -401,9 +437,13 @@ namespace ptens{
     int offs, int n, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.dim(0)==0) return;
 
     PTENS_CHANNEL_LIMIT(n);
     const int nthrd=cnine::roundup(std::max(n,map.dim(1)+1),32);
+
     Ptensors2_reduce1_kernel<<<map.dim(0),nthrd,map.dim(1)*4,stream>>>
       (r.get_arr(),r.stride(0),x.get_arr()+offs,x.stride(0),map.on_device(dev).get_arr(),map.stride(0),n);
   }
@@ -412,9 +452,13 @@ namespace ptens{
     int offs, int n, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.dim(0)==0) return;
 
     PTENS_CHANNEL_LIMIT(n);
     const int nthrd=cnine::roundup(std::max(n,map.dim(1)+1),32);
+
     Ptensors2_reduce1_shrink_kernel<<<map.dim(0),nthrd,map.dim(1)*4,stream>>>
       (r.get_arr(),r.stride(0),x.get_arr()+offs,x.stride(0),map.on_device(dev).get_arr(),map.stride(0),n);
   }
@@ -423,9 +467,13 @@ namespace ptens{
     int offs, int n, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.dim(0)==0) return;
 
     PTENS_CHANNEL_LIMIT(n);
     const int nthrd=cnine::roundup(std::max(n,map.dim(1)+1),32);
+
     Ptensors2_reduce2_kernel<<<map.dim(0),nthrd,map.dim(1)*4,stream>>>
       (r.get_arr(),r.stride(0),x.get_arr()+offs,x.stride(0),map.on_device(dev).get_arr(),map.stride(0),n);
   }
@@ -434,9 +482,13 @@ namespace ptens{
     int offs, int n, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.dim(0)==0) return;
 
     PTENS_CHANNEL_LIMIT(n);
     const int nthrd=cnine::roundup(std::max(n,map.dim(1)+1),32);
+
     Ptensors2_reduce2_shrink_kernel<<<map.dim(0),nthrd,map.dim(1)*4,stream>>>
       (r.get_arr(),r.stride(0),x.get_arr()+offs,x.stride(0),map.on_device(dev).get_arr(),map.stride(0),n);
   }
@@ -446,11 +498,14 @@ namespace ptens{
     const int offs, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
-    int n=x.dim(1);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.n_gather_lists==0) return;
 
+    int n=x.dim(1);
     PTENS_CHANNEL_LIMIT(n);
     int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
-    if(map.n_gather_lists==0) return;
+
     Ptensors2_broadcast0_kernel<<<map.n_gather_lists,nthrd,map.dim(1)*4,stream>>> 
       (r.get_arr()+offs,r.stride(0),x.get_arr(),x.stride(0),map.on_device(dev).get_arr(),map.stride(0),
 	map.gmap_on_device(dev).get_arr(),n);
@@ -460,11 +515,14 @@ namespace ptens{
     const int offs, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
-    int n=x.dim(1);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.n_gather_lists==0) return;
 
+    int n=x.dim(1)/2;
     PTENS_CHANNEL_LIMIT(n);
     int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
-    if(map.n_gather_lists==0) return;
+
     Ptensors2_broadcast0_shrink_kernel<<<map.n_gather_lists,nthrd,map.dim(1)*4,stream>>> 
       (r.get_arr()+offs,r.stride(0),x.get_arr(),x.stride(0),map.on_device(dev).get_arr(),map.stride(0),
 	map.gmap_on_device(dev).get_arr(),n);
@@ -474,11 +532,14 @@ namespace ptens{
     const int offs, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
-    int n=x.dim(1);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.n_gather_lists==0) return;
 
+    int n=x.dim(1);
     PTENS_CHANNEL_LIMIT(n);
     int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
-    if(map.n_gather_lists==0) return;
+
     Ptensors2_broadcast1_kernel<<<map.n_gather_lists,nthrd,map.dim(1)*4,stream>>> 
       (r.get_arr()+offs,r.stride(0),x.get_arr(),x.stride(0),map.on_device(dev).get_arr(),map.stride(0),
 	map.gmap_on_device(dev).get_arr(),n);
@@ -488,11 +549,14 @@ namespace ptens{
     const int offs, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
-    int n=x.dim(1);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.n_gather_lists==0) return;
 
+    int n=x.dim(1)/3;
     PTENS_CHANNEL_LIMIT(n);
     int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
-    if(map.n_gather_lists==0) return;
+
     Ptensors2_broadcast1_shrink_kernel<<<map.n_gather_lists,nthrd,map.dim(1)*4,stream>>> 
       (r.get_arr()+offs,r.stride(0),x.get_arr(),x.stride(0),map.on_device(dev).get_arr(),map.stride(0),
 	map.gmap_on_device(dev).get_arr(),n);
@@ -502,12 +566,32 @@ namespace ptens{
     const int offs, const cudaStream_t& stream){
     int dev=r.dev;
     PTENS_ASSRT(x.dev==dev);
-    int n=x.dim(1);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.n_gather_lists==0) return;
 
+    int n=x.dim(1);
     PTENS_CHANNEL_LIMIT(n);
     int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
-    if(map.n_gather_lists==0) return;
+
     Ptensors2_broadcast2_kernel<<<map.n_gather_lists,nthrd,map.dim(1)*4,stream>>> 
+      (r.get_arr()+offs,r.stride(0),x.get_arr(),x.stride(0),map.on_device(dev).get_arr(),map.stride(0),
+	map.gmap_on_device(dev).get_arr(),n);
+  }
+
+  void Ptensors2_broadcast2_shrink_cu(const TENSOR& r, const TENSOR& x, const AindexPackB& map, 
+    const int offs, const cudaStream_t& stream){
+    int dev=r.dev;
+    PTENS_ASSRT(x.dev==dev);
+    PTENS_ASSRT(r.stride(1)==1);
+    PTENS_ASSRT(x.stride(1)==1);
+    if(map.n_gather_lists==0) return;
+
+    int n=x.dim(1);
+    PTENS_CHANNEL_LIMIT(n);
+    int nthrd=cnine::roundup(std::max(n,map.dim(1)),32);
+
+    Ptensors2_broadcast2_shrink_kernel<<<map.n_gather_lists,nthrd,map.dim(1)*4,stream>>> 
       (r.get_arr()+offs,r.stride(0),x.get_arr(),x.stride(0),map.on_device(dev).get_arr(),map.stride(0),
 	map.gmap_on_device(dev).get_arr(),n);
   }
